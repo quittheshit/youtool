@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Sparkles, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ export function Navbar({ onMenuClick, onSearch }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const handleScroll = () => {
         setIsScrolled(window.scrollY > 10);
@@ -24,7 +24,7 @@ export function Navbar({ onMenuClick, onSearch }: NavbarProps) {
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
     }
-  });
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
