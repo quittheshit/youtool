@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
     const imageBlob = new Blob([bytes], { type: 'image/png' });
 
     const formData = new FormData();
-    formData.append('image', imageBlob, 'drawing.png');
+    formData.append('file', imageBlob, 'drawing.png');
     formData.append('imageUrl', imageUrl);
     formData.append('filePath', `uploads/${submissionId}.png`);
     formData.append('submissionId', submissionId);
