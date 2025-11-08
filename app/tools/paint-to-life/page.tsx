@@ -111,6 +111,7 @@ export default function PaintToLifePage() {
         try {
           const formData = new FormData();
           formData.append('file', imageBlob, `${fileName}`);
+          formData.append('title', title.trim());
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -287,6 +288,7 @@ export default function PaintToLifePage() {
         try {
           const formData = new FormData();
           formData.append('file', blob, `${fileName}`);
+          formData.append('title', newTitle.trim());
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
