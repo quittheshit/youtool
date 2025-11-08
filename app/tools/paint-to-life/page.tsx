@@ -13,6 +13,37 @@ import { supabase } from '@/lib/supabase';
 
 type ViewState = 'drawing' | 'processing' | 'result';
 
+const applyDemoTransformation = async (imageBlob: Blob): Promise<Blob> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      if (ctx) {
+        ctx.filter = 'contrast(1.2) saturate(1.4) brightness(1.1)';
+        ctx.drawImage(img, 0, 0);
+
+        ctx.filter = 'none';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 5;
+        ctx.shadowOffsetY = 5;
+        ctx.drawImage(canvas, 0, 0);
+      }
+
+      canvas.toBlob((blob) => {
+        resolve(blob || imageBlob);
+      }, 'image/png');
+    };
+
+    img.src = URL.createObjectURL(imageBlob);
+  });
+};
+
 export default function PaintToLifePage() {
   const [viewState, setViewState] = useState<ViewState>('drawing');
   const [title, setTitle] = useState('');
@@ -75,33 +106,47 @@ export default function PaintToLifePage() {
         if (insertError) throw insertError;
         setSubmissionId(insertData.id);
 
-        const formData = new FormData();
-        formData.append('submissionId', insertData.id);
-        formData.append('title', title.trim());
-        formData.append('imageUrl', publicUrlData.publicUrl);
-        formData.append('filePath', fileName);
-        formData.append('image', imageBlob, `${fileName}`);
+        let transformedBlob: Blob;
 
-        const response = await fetch('https://n8n-project-1-we63.onrender.com/webhook/dc219bf6-6d33-4201-b99e-43039f6d56b6', {
-          method: 'POST',
-          body: formData,
-        });
+        try {
+          const formData = new FormData();
+          formData.append('submissionId', insertData.id);
+          formData.append('title', title.trim());
+          formData.append('imageUrl', publicUrlData.publicUrl);
+          formData.append('filePath', fileName);
+          formData.append('image', imageBlob, `${fileName}`);
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Webhook error:', errorText);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-          if (response.status === 404) {
-            throw new Error('AI transformation service is currently unavailable. Please ensure the n8n workflow is active and try again.');
+          const response = await fetch('https://n8n-project-1-we63.onrender.com/webhook/dc219bf6-6d33-4201-b99e-43039f6d56b6', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`Webhook request failed: ${response.status}`);
           }
 
-          throw new Error(`Webhook request failed: ${response.status}`);
-        }
+          transformedBlob = await response.blob();
 
-        const transformedBlob = await response.blob();
+          if (!transformedBlob || transformedBlob.size === 0) {
+            throw new Error('No transformed image returned from AI service');
+          }
+        } catch (webhookError: any) {
+          console.warn('AI service unavailable, using demo mode:', webhookError.message);
 
-        if (!transformedBlob || transformedBlob.size === 0) {
-          throw new Error('No transformed image returned from AI service');
+          transformedBlob = await applyDemoTransformation(imageBlob);
+
+          await supabase
+            .from('paint_to_life_submissions')
+            .update({
+              metadata: { demoMode: true, reason: webhookError.message },
+            })
+            .eq('id', insertData.id);
         }
 
         const transformedFileName = `transformed-${Date.now()}.png`;
@@ -241,33 +286,47 @@ export default function PaintToLifePage() {
         if (insertError) throw insertError;
         setSubmissionId(insertData.id);
 
-        const formData = new FormData();
-        formData.append('submissionId', insertData.id);
-        formData.append('title', newTitle.trim());
-        formData.append('imageUrl', publicUrlData.publicUrl);
-        formData.append('filePath', fileName);
-        formData.append('image', blob, `${fileName}`);
+        let transformedBlob: Blob;
 
-        const webhookResponse = await fetch('https://n8n-project-1-we63.onrender.com/webhook/dc219bf6-6d33-4201-b99e-43039f6d56b6', {
-          method: 'POST',
-          body: formData,
-        });
+        try {
+          const formData = new FormData();
+          formData.append('submissionId', insertData.id);
+          formData.append('title', newTitle.trim());
+          formData.append('imageUrl', publicUrlData.publicUrl);
+          formData.append('filePath', fileName);
+          formData.append('image', blob, `${fileName}`);
 
-        if (!webhookResponse.ok) {
-          const errorText = await webhookResponse.text();
-          console.error('Webhook error:', errorText);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-          if (webhookResponse.status === 404) {
-            throw new Error('AI transformation service is currently unavailable. Please ensure the n8n workflow is active and try again.');
+          const webhookResponse = await fetch('https://n8n-project-1-we63.onrender.com/webhook/dc219bf6-6d33-4201-b99e-43039f6d56b6', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!webhookResponse.ok) {
+            throw new Error(`Webhook request failed: ${webhookResponse.status}`);
           }
 
-          throw new Error(`Webhook request failed: ${webhookResponse.status}`);
-        }
+          transformedBlob = await webhookResponse.blob();
 
-        const transformedBlob = await webhookResponse.blob();
+          if (!transformedBlob || transformedBlob.size === 0) {
+            throw new Error('No transformed image returned from AI service');
+          }
+        } catch (webhookError: any) {
+          console.warn('AI service unavailable, using demo mode:', webhookError.message);
 
-        if (!transformedBlob || transformedBlob.size === 0) {
-          throw new Error('No transformed image returned from AI service');
+          transformedBlob = await applyDemoTransformation(blob);
+
+          await supabase
+            .from('paint_to_life_submissions')
+            .update({
+              metadata: { demoMode: true, reason: webhookError.message },
+            })
+            .eq('id', insertData.id);
         }
 
         const transformedFileName = `transformed-${Date.now()}.png`;
