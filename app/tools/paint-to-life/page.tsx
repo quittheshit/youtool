@@ -110,14 +110,10 @@ export default function PaintToLifePage() {
 
         try {
           const formData = new FormData();
-          formData.append('submissionId', insertData.id);
-          formData.append('title', title.trim());
-          formData.append('imageUrl', publicUrlData.publicUrl);
-          formData.append('filePath', fileName);
-          formData.append('image', imageBlob, `${fileName}`);
+          formData.append('file', imageBlob, `${fileName}`);
 
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
 
           const response = await fetch('https://n8n-project-1-we63.onrender.com/webhook/ad5f0a18-085b-4a0d-acf2-a6376e675833', {
             method: 'POST',
@@ -290,14 +286,10 @@ export default function PaintToLifePage() {
 
         try {
           const formData = new FormData();
-          formData.append('submissionId', insertData.id);
-          formData.append('title', newTitle.trim());
-          formData.append('imageUrl', publicUrlData.publicUrl);
-          formData.append('filePath', fileName);
-          formData.append('image', blob, `${fileName}`);
+          formData.append('file', blob, `${fileName}`);
 
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
 
           const webhookResponse = await fetch('https://n8n-project-1-we63.onrender.com/webhook/ad5f0a18-085b-4a0d-acf2-a6376e675833', {
             method: 'POST',
