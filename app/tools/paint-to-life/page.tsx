@@ -119,7 +119,7 @@ export default function PaintToLifePage() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-          const response = await fetch('https://n8n-project-1-we63.onrender.com/webhook/dc219bf6-6d33-4201-b99e-43039f6d56b6', {
+          const response = await fetch('https://n8n-project-1-we63.onrender.com/webhook/ad5f0a18-085b-4a0d-acf2-a6376e675833', {
             method: 'POST',
             body: formData,
             signal: controller.signal,
@@ -299,7 +299,7 @@ export default function PaintToLifePage() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-          const webhookResponse = await fetch('https://n8n-project-1-we63.onrender.com/webhook/dc219bf6-6d33-4201-b99e-43039f6d56b6', {
+          const webhookResponse = await fetch('https://n8n-project-1-we63.onrender.com/webhook/ad5f0a18-085b-4a0d-acf2-a6376e675833', {
             method: 'POST',
             body: formData,
             signal: controller.signal,
