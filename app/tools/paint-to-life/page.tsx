@@ -129,19 +129,41 @@ export default function PaintToLifePage() {
             throw new Error(`Webhook request failed: ${response.status}`);
           }
 
-          const jsonResponse = await response.json();
+          const contentType = response.headers.get('content-type') || '';
 
-          if (!jsonResponse.file) {
-            throw new Error('No image file in webhook response');
-          }
+          if (contentType.includes('image')) {
+            transformedBlob = await response.blob();
+          } else {
+            const jsonResponse = await response.json();
 
-          const base64Data = jsonResponse.file.replace(/^data:image\/\w+;base64,/, '');
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+            if (!jsonResponse.file) {
+              throw new Error('No image file in webhook response');
+            }
+
+            const fileData = jsonResponse.file;
+
+            if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+              const imageResponse = await fetch(fileData);
+              if (!imageResponse.ok) {
+                throw new Error('Failed to fetch image from URL');
+              }
+              transformedBlob = await imageResponse.blob();
+            } else if (fileData.startsWith('data:image') || /^[A-Za-z0-9+/=]+$/.test(fileData.substring(0, 100))) {
+              const base64Data = fileData.replace(/^data:image\/\w+;base64,/, '');
+              const binaryString = atob(base64Data);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              transformedBlob = new Blob([bytes], { type: 'image/png' });
+            } else {
+              const bytes = new Uint8Array(fileData.length);
+              for (let i = 0; i < fileData.length; i++) {
+                bytes[i] = fileData.charCodeAt(i);
+              }
+              transformedBlob = new Blob([bytes], { type: 'image/png' });
+            }
           }
-          transformedBlob = new Blob([bytes], { type: 'image/png' });
 
           if (!transformedBlob || transformedBlob.size === 0) {
             throw new Error('No transformed image returned from AI service');
@@ -319,19 +341,41 @@ export default function PaintToLifePage() {
             throw new Error(`Webhook request failed: ${webhookResponse.status}`);
           }
 
-          const jsonResponse = await webhookResponse.json();
+          const contentType = webhookResponse.headers.get('content-type') || '';
 
-          if (!jsonResponse.file) {
-            throw new Error('No image file in webhook response');
-          }
+          if (contentType.includes('image')) {
+            transformedBlob = await webhookResponse.blob();
+          } else {
+            const jsonResponse = await webhookResponse.json();
 
-          const base64Data = jsonResponse.file.replace(/^data:image\/\w+;base64,/, '');
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+            if (!jsonResponse.file) {
+              throw new Error('No image file in webhook response');
+            }
+
+            const fileData = jsonResponse.file;
+
+            if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+              const imageResponse = await fetch(fileData);
+              if (!imageResponse.ok) {
+                throw new Error('Failed to fetch image from URL');
+              }
+              transformedBlob = await imageResponse.blob();
+            } else if (fileData.startsWith('data:image') || /^[A-Za-z0-9+/=]+$/.test(fileData.substring(0, 100))) {
+              const base64Data = fileData.replace(/^data:image\/\w+;base64,/, '');
+              const binaryString = atob(base64Data);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              transformedBlob = new Blob([bytes], { type: 'image/png' });
+            } else {
+              const bytes = new Uint8Array(fileData.length);
+              for (let i = 0; i < fileData.length; i++) {
+                bytes[i] = fileData.charCodeAt(i);
+              }
+              transformedBlob = new Blob([bytes], { type: 'image/png' });
+            }
           }
-          transformedBlob = new Blob([bytes], { type: 'image/png' });
 
           if (!transformedBlob || transformedBlob.size === 0) {
             throw new Error('No transformed image returned from AI service');
