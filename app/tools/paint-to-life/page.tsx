@@ -130,17 +130,21 @@ export default function PaintToLifePage() {
           }
 
           const contentType = response.headers.get('content-type') || '';
+          console.log('Response content-type:', contentType);
 
           if (contentType.includes('image')) {
+            console.log('Receiving raw image blob');
             transformedBlob = await response.blob();
           } else {
             const jsonResponse = await response.json();
+            console.log('Received JSON response:', jsonResponse);
 
             if (!jsonResponse.file) {
               throw new Error('No image file in webhook response');
             }
 
             const fileData = jsonResponse.file;
+            console.log('File data type:', typeof fileData, 'starts with:', fileData.substring(0, 50));
 
             if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
               const imageResponse = await fetch(fileData);
