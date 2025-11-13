@@ -129,7 +129,19 @@ export default function PaintToLifePage() {
             throw new Error(`Webhook request failed: ${response.status}`);
           }
 
-          transformedBlob = await response.blob();
+          const jsonResponse = await response.json();
+
+          if (!jsonResponse.file) {
+            throw new Error('No image file in webhook response');
+          }
+
+          const base64Data = jsonResponse.file.split(',')[1] || jsonResponse.file;
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          transformedBlob = new Blob([bytes], { type: 'image/png' });
 
           if (!transformedBlob || transformedBlob.size === 0) {
             throw new Error('No transformed image returned from AI service');
@@ -290,6 +302,7 @@ export default function PaintToLifePage() {
           const formData = new FormData();
           formData.append('file', blob, `${fileName}`);
           formData.append('title', newTitle.trim());
+          formData.append('url', publicUrlData.publicUrl);
 
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -306,7 +319,19 @@ export default function PaintToLifePage() {
             throw new Error(`Webhook request failed: ${webhookResponse.status}`);
           }
 
-          transformedBlob = await webhookResponse.blob();
+          const jsonResponse = await webhookResponse.json();
+
+          if (!jsonResponse.file) {
+            throw new Error('No image file in webhook response');
+          }
+
+          const base64Data = jsonResponse.file.split(',')[1] || jsonResponse.file;
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          transformedBlob = new Blob([bytes], { type: 'image/png' });
 
           if (!transformedBlob || transformedBlob.size === 0) {
             throw new Error('No transformed image returned from AI service');
