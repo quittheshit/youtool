@@ -129,19 +129,25 @@ export default function PaintToLifePage() {
             throw new Error(`Webhook request failed: ${response.status}`);
           }
 
-          const jsonResponse = await response.json();
+          const responseText = await response.text();
 
-          if (!jsonResponse.file) {
-            throw new Error('No image file in webhook response');
-          }
+          try {
+            const jsonResponse = JSON.parse(responseText);
 
-          const base64Data = jsonResponse.file.split(',')[1] || jsonResponse.file;
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+            if (!jsonResponse.file) {
+              throw new Error('No image file in webhook response');
+            }
+
+            const fileData = jsonResponse.file;
+            const bytes = new Uint8Array(fileData.length);
+            for (let i = 0; i < fileData.length; i++) {
+              bytes[i] = fileData.charCodeAt(i);
+            }
+            transformedBlob = new Blob([bytes], { type: 'image/png' });
+          } catch (jsonError) {
+            console.log('Response is not JSON, treating as raw image');
+            transformedBlob = new Blob([responseText], { type: 'image/png' });
           }
-          transformedBlob = new Blob([bytes], { type: 'image/png' });
 
           if (!transformedBlob || transformedBlob.size === 0) {
             throw new Error('No transformed image returned from AI service');
@@ -319,19 +325,25 @@ export default function PaintToLifePage() {
             throw new Error(`Webhook request failed: ${webhookResponse.status}`);
           }
 
-          const jsonResponse = await webhookResponse.json();
+          const responseText = await webhookResponse.text();
 
-          if (!jsonResponse.file) {
-            throw new Error('No image file in webhook response');
-          }
+          try {
+            const jsonResponse = JSON.parse(responseText);
 
-          const base64Data = jsonResponse.file.split(',')[1] || jsonResponse.file;
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+            if (!jsonResponse.file) {
+              throw new Error('No image file in webhook response');
+            }
+
+            const fileData = jsonResponse.file;
+            const bytes = new Uint8Array(fileData.length);
+            for (let i = 0; i < fileData.length; i++) {
+              bytes[i] = fileData.charCodeAt(i);
+            }
+            transformedBlob = new Blob([bytes], { type: 'image/png' });
+          } catch (jsonError) {
+            console.log('Response is not JSON, treating as raw image');
+            transformedBlob = new Blob([responseText], { type: 'image/png' });
           }
-          transformedBlob = new Blob([bytes], { type: 'image/png' });
 
           if (!transformedBlob || transformedBlob.size === 0) {
             throw new Error('No transformed image returned from AI service');
