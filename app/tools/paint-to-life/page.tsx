@@ -172,6 +172,8 @@ export default function PaintToLifePage() {
           if (!transformedBlob || transformedBlob.size === 0) {
             throw new Error('No transformed image returned from AI service');
           }
+
+          console.log('✅ Transformed blob size:', transformedBlob.size, 'Original blob size:', imageBlob.size);
         } catch (webhookError: any) {
           console.warn('AI service unavailable, using demo mode:', webhookError.message);
 
