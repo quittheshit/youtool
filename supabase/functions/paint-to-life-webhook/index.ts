@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const N8N_WEBHOOK_URL = "https://n8n-project-1-we63.onrender.com/webhook/ad5f0a18-085b-4a0d-acf2-a6376e675833";
+const MAKE_WEBHOOK_URL = "https://hook.eu2.make.com/qrj28k85ghu5lpc3wg3dce4s6sdpk91u";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -37,23 +37,23 @@ Deno.serve(async (req: Request) => {
     formData.append('filePath', `uploads/${submissionId}.png`);
     formData.append('submissionId', submissionId);
 
-    console.log('Sending to n8n webhook...');
+    console.log('Sending to Make.com webhook...');
 
-    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+    const makeResponse = await fetch(MAKE_WEBHOOK_URL, {
       method: 'POST',
       body: formData,
     });
 
-    if (!n8nResponse.ok) {
-      throw new Error(`n8n webhook failed with status: ${n8nResponse.status}`);
+    if (!makeResponse.ok) {
+      throw new Error(`Make.com webhook failed with status: ${makeResponse.status}`);
     }
 
-    const transformedImageBlob = await n8nResponse.blob();
+    const transformedImageBlob = await makeResponse.blob();
     const transformedArrayBuffer = await transformedImageBlob.arrayBuffer();
     const transformedBase64 = btoa(String.fromCharCode(...new Uint8Array(transformedArrayBuffer)));
     const transformedImageUrl = `data:image/png;base64,${transformedBase64}`;
 
-    console.log('Successfully received transformed image from n8n');
+    console.log('Successfully received transformed image from Make.com');
 
     const response = {
       success: true,
