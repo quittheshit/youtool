@@ -50,6 +50,43 @@ export default function ProductBeautifier() {
     }
   };
 
+  const pollForResult = async (submissionId: string): Promise<Blob> => {
+    const maxAttempts = 30;
+    const pollInterval = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      const { data, error } = await supabase
+        .from('product_beautifier_submissions')
+        .select('beautified_image_url, status, error_message')
+        .eq('id', submissionId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Polling error:', error);
+        continue;
+      }
+
+      if (data?.status === 'completed' && data.beautified_image_url) {
+        console.log('Result ready, fetching image...');
+        const response = await fetch(data.beautified_image_url);
+        if (!response.ok) {
+          throw new Error('Failed to fetch beautified image');
+        }
+        return await response.blob();
+      }
+
+      if (data?.status === 'failed') {
+        throw new Error(data.error_message || 'Processing failed');
+      }
+
+      console.log(`Polling attempt ${attempt + 1}/${maxAttempts}...`);
+    }
+
+    throw new Error('Timeout waiting for beautified image');
+  };
+
   const processImage = async (file: File) => {
     try {
       setViewState('processing');
@@ -128,33 +165,36 @@ export default function ProductBeautifier() {
         const jsonResponse = await response.json();
         console.log('Received JSON response:', jsonResponse);
 
-        if (!jsonResponse.file) {
+        if (jsonResponse.message === 'Workflow was started') {
+          console.log('Webhook returned async message, polling for results...');
+          beautifiedBlob = await pollForResult(insertData.id);
+        } else if (!jsonResponse.file) {
           throw new Error('No image file in webhook response');
-        }
-
-        const fileData = jsonResponse.file;
-        console.log('File data type:', typeof fileData, 'starts with:', fileData.substring(0, 50));
-
-        if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
-          const imageResponse = await fetch(fileData);
-          if (!imageResponse.ok) {
-            throw new Error('Failed to fetch image from URL');
-          }
-          beautifiedBlob = await imageResponse.blob();
-        } else if (fileData.startsWith('data:image') || /^[A-Za-z0-9+/=]+$/.test(fileData.substring(0, 100))) {
-          const base64Data = fileData.replace(/^data:image\/\w+;base64,/, '');
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          beautifiedBlob = new Blob([bytes], { type: 'image/png' });
         } else {
-          const bytes = new Uint8Array(fileData.length);
-          for (let i = 0; i < fileData.length; i++) {
-            bytes[i] = fileData.charCodeAt(i);
+          const fileData = jsonResponse.file;
+          console.log('File data type:', typeof fileData, 'starts with:', fileData.substring(0, 50));
+
+          if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+            const imageResponse = await fetch(fileData);
+            if (!imageResponse.ok) {
+              throw new Error('Failed to fetch image from URL');
+            }
+            beautifiedBlob = await imageResponse.blob();
+          } else if (fileData.startsWith('data:image') || /^[A-Za-z0-9+/=]+$/.test(fileData.substring(0, 100))) {
+            const base64Data = fileData.replace(/^data:image\/\w+;base64,/, '');
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            beautifiedBlob = new Blob([bytes], { type: 'image/png' });
+          } else {
+            const bytes = new Uint8Array(fileData.length);
+            for (let i = 0; i < fileData.length; i++) {
+              bytes[i] = fileData.charCodeAt(i);
+            }
+            beautifiedBlob = new Blob([bytes], { type: 'image/png' });
           }
-          beautifiedBlob = new Blob([bytes], { type: 'image/png' });
         }
       }
 
