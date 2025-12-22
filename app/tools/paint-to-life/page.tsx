@@ -117,7 +117,7 @@ export default function PaintToLifePage() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-          const response = await fetch('https://hook.eu2.make.com/qrj28k85ghu5lpc3wg3dce4s6sdpk91u', {
+          const response = await fetch('https://n8n.busybiz.dk/webhook/ad5f0a18-085b-4a0d-acf2-a6376e675833', {
             method: 'POST',
             body: formData,
             signal: controller.signal,
@@ -335,7 +335,7 @@ export default function PaintToLifePage() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-          const webhookResponse = await fetch('https://hook.eu2.make.com/qrj28k85ghu5lpc3wg3dce4s6sdpk91u', {
+          const webhookResponse = await fetch('https://n8n.busybiz.dk/webhook/ad5f0a18-085b-4a0d-acf2-a6376e675833', {
             method: 'POST',
             body: formData,
             signal: controller.signal,
