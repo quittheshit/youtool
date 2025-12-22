@@ -104,7 +104,7 @@ export default function ProductBeautifier() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-      const response = await fetch('https://hook.eu2.make.com/qrj28k85ghu5lpc3wg3dce4s6sdpk91u', {
+      const response = await fetch('https://n8n.busybiz.dk/webhook-test/ad5f0a18-085b-4a0d-acf2-a6376e675833', {
         method: 'POST',
         body: formData,
         signal: controller.signal,
